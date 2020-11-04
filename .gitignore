@@ -116,3 +116,4 @@ dist
 .pnp.*
 
 /images
+images.txt

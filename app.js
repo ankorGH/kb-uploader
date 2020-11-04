@@ -1,42 +1,20 @@
 const express = require('express')
 const app = express()
-const multer = require('multer')
 const {StatusCodes} = require('http-status-codes')
-const sharp = require('sharp')
 
-const storage  = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'images/')
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + '.jpg')
-  }
-})
+app.use('/images', require('./image-uploader-service/route'))
 
-const upload = multer({ storage })
+app.use(function (err, req, res, next) {
+  let message = 'oh dear, server couldn\'t handle the request'
 
-const validateUpload = (req, res, next) => {
-  if(!req.file) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      message: 'file is required'
-    })
+  if(err.message.includes('no such file')) {
+    message = 'image couldn\'t be found'
   }
 
-  next()
-}
-
-const createThumbnail = (filename, type) => {
-  sharp(imagePath)
-  .resize(250, 250)
-  .toFile(`${__dirname}/images/${filename}_thumbnail.png`)
-  .then((res)=> console.log(res))
-  .catch((err) => console.log(err))
-}
-
-app.post('/upload', upload.single('image'), validateUpload, (req,res) => {
-  const { path, filename} = req.file
-  // createThumbnail(filename)
-  // res.sendFile(`${path}.png`)
+  res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+    message,
+    error: err,
+  })
 })
 
 module.exports = app
